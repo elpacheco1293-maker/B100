@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Ejecutivo de Abastecimiento: B100 vs B300</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            100: '#e0ebff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#0f172a'
+                        },
+                        slateDark: '#0b1120',
+                        cardDark: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx) for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1120;
+            color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-blue {
+            box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.25);
+        }
+        .glow-purple {
+            box-shadow: 0 0 25px -5px rgba(147, 51, 234, 0.25);
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: #ffffff !important; color: #000000 !important; }
+            .glass-card { background: #ffffff !important; border: 1px solid #ccc !important; color: #000000 !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 space-y-6">
+
+    <!-- HEADER EJECUTIVO -->
+    <header class="glass-card rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glow-blue">
+        <div>
+            <div class="flex items-center gap-2 text-blue-400 text-sm font-semibold tracking-wider uppercase mb-1">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                Dashboard de Operaciones & Logística
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Informe Ejecutivo de Abastecimiento: B100 vs B300</h1>
+            <p class="text-slate-400 text-sm mt-1">Análisis mensual de cobertura de demanda, cumplimiento por laboratorio y productos prioritarios</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 no-print">
+            <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition duration-200 shadow-lg shadow-emerald-900/30">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                Descargar Excel (.xlsx)
+            </button>
+            <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition duration-200">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                Imprimir / PDF
+            </button>
+        </div>
+    </header>
+
+    <!-- KPI CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Demanda Total B300 -->
+        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 rounded-full group-hover:scale-110 transition duration-300"></div>
+            <div>
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Demanda Total (B300)</span>
+                <div class="text-3xl font-extrabold text-white mt-2">1,084,522</div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-slate-400">
+                <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-400 mr-1.5"></i>
+                Unidades solicitadas
+            </div>
+        </div>
+
+        <!-- Enviado Total B100 -->
+        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full group-hover:scale-110 transition duration-300"></div>
+            <div>
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Enviado Total (B100)</span>
+                <div class="text-3xl font-extrabold text-indigo-400 mt-2">923,001</div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-slate-400">
+                <i data-lucide="truck" class="w-4 h-4 text-indigo-400 mr-1.5"></i>
+                Unidades despachadas
+            </div>
+        </div>
+
+        <!-- Porcentaje de Cumplimiento -->
+        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group glow-purple">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-500/10 rounded-full group-hover:scale-110 transition duration-300"></div>
+            <div>
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Cumplimiento Global</span>
+                <div class="text-3xl font-extrabold text-amber-400 mt-2">85.11%</div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-amber-400/90 font-medium">
+                <i data-lucide="alert-triangle" class="w-4 h-4 mr-1.5"></i>
+                Brecha de déficit: 14.89%
+            </div>
+        </div>
+
+        <!-- Total SKUs -->
+        <div class="glass-card p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full group-hover:scale-110 transition duration-300"></div>
+            <div>
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Productos Analizados</span>
+                <div class="text-3xl font-extrabold text-emerald-400 mt-2">627</div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-slate-400">
+                <i data-lucide="layers" class="w-4 h-4 text-emerald-400 mr-1.5"></i>
+                SKUs consolidados
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN GRÁFICOS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Gráfico Principal: Comparativa por Top Proveedores -->
+        <div class="glass-card p-6 rounded-2xl lg:col-span-2">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="building-2" class="w-5 h-5 text-blue-400"></i>
+                        Top 10 Laboratorios / Proveedores: Demanda B300 vs Enviado B100
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Comparativa directa entre volumen requerido y volumen enviado en unidades</p>
+                </div>
+            </div>
+            <div class="h-80 relative">
+                <canvas id="chartTopProveedores"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico Secundario: % Cumplimiento por Laboratorio -->
+        <div class="glass-card p-6 rounded-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="percent" class="w-5 h-5 text-purple-400"></i>
+                        % Cobertura de Demanda
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Suministro B100 sobre B300</p>
+                </div>
+            </div>
+            <div class="h-80 relative">
+                <canvas id="chartCumplimiento"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA 1: TOP LABORATORIOS -->
+    <div class="glass-card rounded-2xl p-6 overflow-hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+            <div>
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="award" class="w-5 h-5 text-indigo-400"></i>
+                    Ranking de Proveedores / Laboratorios (B100)
+                </h2>
+                <p class="text-slate-400 text-xs mt-0.5">Detalle de volumen, nivel de cumplimiento y cuota de participación en envíos</p>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-800/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                    <tr>
+                        <th class="p-3.5 rounded-l-lg">#</th>
+                        <th class="p-3.5">Laboratorio / Proveedor</th>
+                        <th class="p-3.5 text-right">Enviado B100</th>
+                        <th class="p-3.5 text-right">Demanda B300</th>
+                        <th class="p-3.5 text-center">% Cumplimiento</th>
+                        <th class="p-3.5 text-right rounded-r-lg">Part. en B100</th>
+                    </tr>
+                </thead>
+                <tbody id="tableLabs" class="divide-y divide-slate-800">
+                    <!-- Dinámico con JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TABLA 2: TOP PRODUCTOS -->
+    <div class="glass-card rounded-2xl p-6 overflow-hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+            <div>
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="package-search" class="w-5 h-5 text-amber-400"></i>
+                    Top 10 Productos con Mayor Demanda en B300
+                </h2>
+                <p class="text-slate-400 text-xs mt-0.5">Productos con mayor nivel de consumo e impacto operacional</p>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-800/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700">
+                    <tr>
+                        <th class="p-3.5 rounded-l-lg">Código SKU</th>
+                        <th class="p-3.5">Descripción del Producto</th>
+                        <th class="p-3.5 text-right">Demanda B300</th>
+                        <th class="p-3.5 text-right">Enviado B100</th>
+                        <th class="p-3.5 text-center">% Cobertura</th>
+                        <th class="p-3.5 rounded-r-lg">Laboratorio</th>
+                    </tr>
+                </thead>
+                <tbody id="tableProds" class="divide-y divide-slate-800">
+                    <!-- Dinámico con JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CONCLUSIONES Y HALLAZGOS ESTRATÉGICOS -->
+    <div class="glass-card p-6 rounded-2xl border-l-4 border-l-blue-500">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-4">
+            <i data-lucide="lightbulb" class="w-5 h-5 text-amber-400"></i>
+            Conclusiones Clave para la Gerencia
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                <h3 class="text-blue-400 font-semibold text-sm mb-1 flex items-center gap-1.5">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i> Concentración de Proveedores
+                </h3>
+                <p class="text-slate-300 text-xs leading-relaxed">
+                    <strong>LA SANTE S.R.L</strong> concentra el **25.99%** del volumen total despachado por B100, convirtiéndose en el socio logístico más crítico. Un desabastecimiento de este proveedor impactaría a más de una cuarta parte de las entregas.
+                </p>
+            </div>
+
+            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                <h3 class="text-amber-400 font-semibold text-sm mb-1 flex items-center gap-1.5">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Brecha en Alta Rotación
+                </h3>
+                <p class="text-slate-300 text-xs leading-relaxed">
+                    Productos clave de alta demanda como <em>Barbijo Descartable (70.15%)</em> y <em>Amoxicilina 1g (79.16%)</em> registran déficits significativos. Se sugiere establecer un stock de seguridad prioritario para estos SKUs.
+                </p>
+            </div>
+
+            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                <h3 class="text-emerald-400 font-semibold text-sm mb-1 flex items-center gap-1.5">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Sobre-Suministro Específico
+                </h3>
+                <p class="text-slate-300 text-xs leading-relaxed">
+                    Proveedores como <strong>COLHER GROUP</strong> (108.37%) y <strong>JORGE BADOUR</strong> (112.79%) registran envíos por encima de la demanda solicitada, permitiendo compensar inventarios de meses anteriores.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="text-center text-slate-500 text-xs py-4">
+        Reporte generado automáticamente para la Gerencia de Logística & Operations • Datos actualizados B100 / B300
+    </footer>
+
+    <!-- SCRIPT DE DATOS Y GRÁFICOS -->
+    <script>
+        // Inicializar iconos de Lucide
+        lucide.createIcons();
+
+        // Data de Proveedores
+        const labsData = [
+            { rank: 1, lab: "LA SANTE S.R.L", b100: 239883, b300: 297552, cump: 80.62, part: 25.99 },
+            { rank: 2, lab: "BESTENS SRL", b100: 84600, b300: 120600, cump: 70.15, part: 9.17 },
+            { rank: 3, lab: "COLHER GROUP S.R.L.", b100: 42508, b300: 39224, cump: 108.37, part: 4.61 },
+            { rank: 4, lab: "JORGE BADOUR BS(SCZ)", b100: 37358, b300: 33121, cump: 112.79, part: 4.05 },
+            { rank: 5, lab: "LAQFAGAL FARMA INDUSTRIA SRL", b100: 35610, b300: 33800, cump: 105.36, part: 3.86 },
+            { rank: 6, lab: "KRISHPAR CARE BOLIVIA S.R.L.", b100: 34110, b300: 31346, cump: 108.82, part: 3.70 },
+            { rank: 7, lab: "WEIGAO MEDICAL INTERNATIONAL", b100: 26844, b300: 28354, cump: 94.67, part: 2.91 },
+            { rank: 8, lab: "VALENCIA CITRUS S.R.L", b100: 18540, b300: 18477, cump: 100.34, part: 2.01 },
+            { rank: 9, lab: "INALTEX MARCA PROPIA BS(SCZ)", b100: 16561, b300: 15209, cump: 108.89, part: 1.79 },
+            { rank: 10, lab: "ACE FARM HOLDINGS", b100: 15958, b300: 14853, cump: 107.44, part: 1.73 }
+        ];
+
+        // Data de Productos
+        const prodsData = [
+            { sku: "106427", desc: "BARBIJO DESCARTABLE C/CLIP X 50 UNID", b300: 120600, b100: 84600, cump: 70.15, lab: "BESTENS SRL" },
+            { sku: "7703763189090", desc: "AMOXICILINA 1GR X 20 TAB", b300: 89080, b100: 70520, cump: 79.16, lab: "LA SANTE S.R.L" },
+            { sku: "7703763070237", desc: "AMOXICILINA 500MG X 50 CAP", b300: 83750, b100: 64750, cump: 77.31, lab: "LA SANTE S.R.L" },
+            { sku: "650240028731", desc: "BIO ELECTRO X 100 TAB", b300: 36700, b100: 39900, cump: 108.72, lab: "COLHER GROUP S.R.L." },
+            { sku: "745096", desc: "AZATIOPRINA 50MG X 30 TAB GENÉRICO", b300: 33570, b100: 35370, cump: 105.36, lab: "LAQFAGAL FARMA" },
+            { sku: "7750215030240", desc: "ATORVASTATINA 10MG X 100 TAB", b300: 30600, b100: 28600, cump: 93.46, lab: "PORTUGAL" },
+            { sku: "7703763170180", desc: "AMITRIPTILINA 25MG X 30 TAB", b300: 30360, b100: 24120, cump: 79.45, lab: "LA SANTE S.R.L" },
+            { sku: "7703763200641", desc: "ATORVASTATINA 20MG X 10 TAB", b300: 25250, b100: 22430, cump: 88.83, lab: "LA SANTE S.R.L" },
+            { sku: "740405", desc: "ATORVASTATINA 20MG X 10 COMP GENÉRICO", b300: 24320, b100: 26620, cump: 109.46, lab: "KRISHPAR CARE" },
+            { sku: "709727", desc: "BARBIJO DESCARTABLE C/CLIP X 50 UNID", b300: 22050, b100: 2050, cump: 9.30, lab: "HP" }
+        ];
+
+        // Poblar Tabla de Laboratorios
+        const tbodyLabs = document.getElementById('tableLabs');
+        labsData.forEach(item => {
+            const badgeColor = item.cump >= 100 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                : (item.cump >= 80 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20');
+            
+            tbodyLabs.innerHTML += `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3.5 font-semibold text-slate-400">${item.rank}</td>
+                    <td class="p-3.5 font-medium text-white">${item.lab}</td>
+                    <td class="p-3.5 text-right font-semibold text-indigo-400">${item.b100.toLocaleString()}</td>
+                    <td class="p-3.5 text-right text-slate-300">${item.b300.toLocaleString()}</td>
+                    <td class="p-3.5 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeColor}">
+                            ${item.cump.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td class="p-3.5 text-right font-medium text-slate-400">${item.part.toFixed(2)}%</td>
+                </tr>
+            `;
+        });
+
+        // Poblar Tabla de Productos
+        const tbodyProds = document.getElementById('tableProds');
+        prodsData.forEach(item => {
+            const badgeColor = item.cump >= 100 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                : (item.cump >= 80 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20');
+
+            tbodyProds.innerHTML += `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3.5 font-mono text-xs text-blue-400 font-medium">${item.sku}</td>
+                    <td class="p-3.5 font-medium text-white">${item.desc}</td>
+                    <td class="p-3.5 text-right text-slate-300">${item.b300.toLocaleString()}</td>
+                    <td class="p-3.5 text-right font-semibold text-indigo-400">${item.b100.toLocaleString()}</td>
+                    <td class="p-3.5 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeColor}">
+                            ${item.cump.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td class="p-3.5 text-slate-400">${item.lab}</td>
+                </tr>
+            `;
+        });
+
+        // Configuración Chart.js Dark
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = 'Inter';
+
+        // Gráfico 1: Top Proveedores B100 vs B300
+        const ctx1 = document.getElementById('chartTopProveedores').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: labsData.map(l => l.lab.length > 15 ? l.lab.substring(0, 15) + '...' : l.lab),
+                datasets: [
+                    {
+                        label: 'Demanda B300',
+                        data: labsData.map(l => l.b300),
+                        backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Enviado B100',
+                        data: labsData.map(l => l.b100),
+                        backgroundColor: 'rgba(129, 140, 248, 0.8)',
+                        borderColor: '#818cf8',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                }
+            }
+        });
+
+        // Gráfico 2: % Cumplimiento Horizontal
+        const ctx2 = document.getElementById('chartCumplimiento').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: labsData.map(l => l.lab.length > 12 ? l.lab.substring(0, 12) + '...' : l.lab),
+                datasets: [{
+                    label: '% Cumplimiento',
+                    data: labsData.map(l => l.cump),
+                    backgroundColor: labsData.map(l => l.cump >= 100 ? 'rgba(52, 211, 153, 0.7)' : (l.cump >= 80 ? 'rgba(251, 191, 36, 0.7)' : 'rgba(244, 63, 94, 0.7)')),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { callback: v => v + '%' }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Función para exportar los datos a un archivo Excel (.xlsx) real
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+
+            // Hoja 1: Resumen General
+            const wsResumenData = [
+                ["Métrica", "Valor"],
+                ["Demanda Total (B300)", 1084522],
+                ["Enviado Total (B100)", 923001],
+                ["Porcentaje de Cumplimiento Global", "85.11%"],
+                ["Total Productos Analizados", 627]
+            ];
+            const wsResumen = XLSX.utils.aoa_to_sheet(wsResumenData);
+            XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Global");
+
+            // Hoja 2: Top Laboratorios
+            const wsLabsData = [
+                ["Ranking", "Laboratorio / Proveedor", "Enviado B100", "Demanda B300", "% Cumplimiento", "Participación B100"]
+            ];
+            labsData.forEach(l => {
+                wsLabsData.push([l.rank, l.lab, l.b100, l.b300, l.cump / 100, l.part / 100]);
+            });
+            const wsLabs = XLSX.utils.aoa_to_sheet(wsLabsData);
+            XLSX.utils.book_append_sheet(wb, wsLabs, "Top Laboratorios");
+
+            // Hoja 3: Top Productos
+            const wsProdsData = [
+                ["Código SKU", "Descripción del Producto", "Demanda B300", "Enviado B100", "% Cobertura", "Laboratorio"]
+            ];
+            prodsData.forEach(p => {
+                wsProdsData.push([p.sku, p.desc, p.b300, p.b100, p.cump / 100, p.lab]);
+            });
+            const wsProds = XLSX.utils.aoa_to_sheet(wsProdsData);
+            XLSX.utils.book_append_sheet(wb, wsProds, "Top Productos");
+
+            // Descargar el archivo Excel
+            XLSX.writeFile(wb, "Informe_Ejecutivo_Abastecimiento_B100_vs_B300.xlsx");
+        }
+    </script>
+</body>
+</html>
